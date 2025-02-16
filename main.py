@@ -3,12 +3,14 @@ import sys
 from PyQt6 import uic
 from PyQt6.QtWidgets import QApplication, QMainWindow, QMessageBox, QWidget
 from PyQt6.QtSql import QSqlDatabase, QSqlTableModel
+from UI_MainWindow import Ui_MainWindow
+from UI_AddEditCoffeeForm import Ui_AddEditCoffeeForm
 
 
-class AddEditCoffeeForm(QWidget):
+class AddEditCoffeeForm(QWidget, Ui_AddEditCoffeeForm):
     def __init__(self, model, db, mode: str, row_id: int = -1):
         super().__init__()
-        uic.loadUi('addEditCoffeeForm.ui', self)
+        self.setupUi(self)
         self.mode = mode
         self.row_id = row_id
         self.model = model
@@ -84,10 +86,10 @@ class AddEditCoffeeForm(QWidget):
         self.close()
 
 
-class MyWidget(QMainWindow):
+class MyWidget(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
-        uic.loadUi('main.ui', self)
+        self.setupUi(self)
         self.db = QSqlDatabase.addDatabase("QSQLITE")
         self.model = QSqlTableModel(self, self.db)
         self.init_table()
@@ -96,7 +98,7 @@ class MyWidget(QMainWindow):
         self.editButton.clicked.connect(self.call_add_edit_form)
 
     def init_table(self):
-        self.db.setDatabaseName("coffee.sqlite")
+        self.db.setDatabaseName("./data/coffee.sqlite")
 
         if not self.db.open():
             QMessageBox.critical(
@@ -130,12 +132,17 @@ class MyWidget(QMainWindow):
             self.add_edit_form.setWindowTitle("Добавить кофе")
             self.add_edit_form.show()
         else:
-            self.add_edit_form = AddEditCoffeeForm(
-                self.model, self.db,
-                row_id=self.coffeeTable.currentIndex().row(), mode="edit"
-            )
-            self.add_edit_form.setWindowTitle("Редактировать кофе")
-            self.add_edit_form.show()
+            index = self.coffeeTable.currentIndex().row()
+
+            if index < 0:
+                QMessageBox.critical(self, "Ошибка", "Не выбрана запись для редактирования.")
+            else:
+                self.add_edit_form = AddEditCoffeeForm(
+                    self.model, self.db,
+                    row_id=self.coffeeTable.currentIndex().row(), mode="edit"
+                )
+                self.add_edit_form.setWindowTitle("Редактировать кофе")
+                self.add_edit_form.show()
         self.update_table()
 
 
